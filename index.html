@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>bytebeat composer · visualizer ✦ neurofunk</title>
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src 'self' blob:; connect-src 'self' blob:;">
   <style>
     * {
       margin: 0;
@@ -620,7 +624,6 @@
       for (const [prop, val] of Object.entries(t)) {
         root.style.setProperty(prop, val);
       }
-      // Override with custom picks if they differ from defaults
       if (customAccent !== t['--accent-primary']) {
         root.style.setProperty('--accent-primary', customAccent);
         root.style.setProperty('--accent-glow', customAccent.replace(')', ',0.35)').replace('rgb', 'rgba'));
@@ -648,7 +651,6 @@
       root.style.setProperty('--wave-color', customWave);
       root.style.setProperty('--wave-glow', customWave);
       root.style.setProperty('--bg-body', customBg);
-      // Also update primary button to match accent
       root.style.setProperty('--btn-primary-bg', customAccent);
       root.style.setProperty('--btn-primary-border', customAccent);
     }
@@ -686,7 +688,7 @@
     });
 
     // ──────────────────────────────────────
-    // AUDIO ENGINE (same as before)
+    // AUDIO ENGINE
     // ──────────────────────────────────────
     let audioCtx = null;
     let processorNode = null;
@@ -714,6 +716,7 @@
     let currentVolume = parseFloat(volumeSlider.value);
     let currentSampleRate = parseInt(sampleRateSlider.value, 10);
 
+    // ─── COMPILE (no restrictions) ───
     function compileFormula(formulaStr) {
       try {
         const normalized = formulaStr.trim();
@@ -957,6 +960,13 @@
         }
       });
     });
+
+    // ─── GLOBAL ERROR HANDLER (kept for stability) ───
+    window.onerror = function(msg, url, line, col, error) {
+      statusText.textContent = '⚠️ runtime error – check formula';
+      return true;
+    };
+
     formulaInput.addEventListener('input', () => {
       const fn = compileFormula(formulaInput.value);
       if (fn) { bytebeatFunc = fn; statusText.textContent = '📝 formula updated'; }
