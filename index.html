@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>bytebeat composer · visualizer ✦ neurofunk</title>
+  <style>
+    * {
+      margin: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: var(--bg-body);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Segoe UI', 'JetBrains Mono', 'Fira Code', monospace;
+      padding: 20px;
+      margin: 0;
+      transition: background 0.3s ease;
+    }
+    .container {
+      max-width: 860px;
+      width: 100%;
+      background: var(--bg-container);
+      border-radius: 2.5rem;
+      padding: 2rem 2rem 1.8rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 0 1px var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+    h1 {
+      color: var(--text-heading);
+      font-weight: 500;
+      font-size: 2rem;
+      letter-spacing: 2px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: -0.2rem;
+      border-bottom: 1px solid var(--border-divider);
+      padding-bottom: 0.6rem;
+      transition: color 0.3s ease, border-color 0.3s ease;
+    }
+    h1 span {
+      background: var(--badge-bg);
+      padding: 0.2rem 1rem;
+      border-radius: 3rem;
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: var(--badge-text);
+      letter-spacing: 0.3px;
+      margin-left: 0.5rem;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    .editor-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+    label {
+      color: var(--text-label);
+      font-weight: 500;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: color 0.3s ease;
+    }
+    .formula-input {
+      background: var(--bg-input);
+      border: 1px solid var(--border-input);
+      border-radius: 2rem;
+      padding: 0.9rem 1.5rem;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 1rem;
+      color: var(--text-input);
+      outline: none;
+      transition: all 0.2s ease;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+      letter-spacing: 0.3px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .formula-input:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-glow), inset 0 2px 6px #000000;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.8rem;
+      margin-top: 0.2rem;
+    }
+    button {
+      background: var(--btn-bg);
+      border: 1px solid var(--btn-border);
+      color: var(--btn-text);
+      font-weight: 500;
+      padding: 0.65rem 1.5rem;
+      border-radius: 2.5rem;
+      font-size: 0.9rem;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    button:hover {
+      background: var(--btn-hover-bg);
+      border-color: var(--btn-hover-border);
+      color: var(--btn-hover-text);
+    }
+    button.primary {
+      background: var(--btn-primary-bg);
+      border-color: var(--btn-primary-border);
+      color: var(--btn-primary-text);
+      font-weight: 700;
+    }
+    button.primary:hover {
+      background: var(--btn-primary-hover);
+    }
+    button.export-btn {
+      background: var(--btn-export-bg);
+      border-color: var(--btn-export-border);
+      color: var(--btn-export-text);
+    }
+    button.export-btn:hover {
+      background: var(--btn-export-hover);
+    }
+    button.theme-btn {
+      background: var(--btn-theme-bg);
+      border-color: var(--btn-theme-border);
+      padding: 0.5rem 1rem;
+      font-size: 0.8rem;
+    }
+    .theme-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      align-items: center;
+      background: var(--bg-panel);
+      padding: 0.8rem 1.2rem;
+      border-radius: 2rem;
+      border: 1px solid var(--border-panel);
+      transition: all 0.3s ease;
+    }
+    .theme-presets {
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+    }
+    .theme-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.15s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .theme-dot:hover {
+      border-color: #fff;
+      transform: scale(1.15);
+    }
+    .theme-dot.active {
+      border-color: #fff;
+      box-shadow: 0 0 0 3px var(--accent-primary);
+    }
+    .color-picker-row {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .color-picker-row label {
+      font-size: 0.65rem;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--text-label);
+    }
+    input[type="color"] {
+      width: 26px;
+      height: 26px;
+      border: 1px solid var(--border-input);
+      border-radius: 50%;
+      cursor: pointer;
+      background: transparent;
+      padding: 2px;
+    }
+    .slider-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-panel);
+      padding: 0.2rem 1rem;
+      border-radius: 3rem;
+      flex-wrap: wrap;
+      transition: background 0.3s ease;
+    }
+    .slider-group label {
+      margin: 0;
+      font-size: 0.75rem;
+      color: var(--text-label);
+    }
+    input[type="range"] {
+      width: 80px;
+      cursor: pointer;
+      accent-color: var(--accent-primary);
+    }
+    canvas {
+      width: 100%;
+      height: auto;
+      background: var(--bg-canvas);
+      border-radius: 2rem;
+      display: block;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+      border: 1px solid var(--border-canvas);
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-info);
+      font-size: 0.75rem;
+      padding: 0 0.3rem;
+      transition: color 0.3s ease;
+    }
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.2rem;
+    }
+    .example-chip {
+      background: var(--chip-bg);
+      padding: 0.3rem 0.9rem;
+      border-radius: 2rem;
+      font-size: 0.75rem;
+      color: var(--chip-text);
+      cursor: pointer;
+      border: 1px solid var(--chip-border);
+      transition: all 0.2s ease;
+    }
+    .example-chip:hover {
+      background: var(--chip-hover-bg);
+      border-color: var(--chip-hover-border);
+    }
+    @media (max-width: 600px) {
+      .container {
+        padding: 1.2rem;
+      }
+      .controls {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .theme-panel {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>
+    🎛️ bytebeat
+    <span>t &amp; 0xFF</span>
+  </h1>
+
+  <div class="theme-panel" id="themePanel">
+    <span style="color:var(--text-label);font-size:0.75rem;font-weight:600;">🎨 theme:</span>
+    <div class="theme-presets" id="themePresets">
+      <span class="theme-dot active" data-theme="dark" style="background:#1a1e24;" title="dark"></span>
+      <span class="theme-dot" data-theme="cyberpunk" style="background:#1a0033;" title="cyberpunk"></span>
+      <span class="theme-dot" data-theme="ocean" style="background:#0a1628;" title="ocean"></span>
+      <span class="theme-dot" data-theme="forest" style="background:#0d1a0d;" title="forest"></span>
+      <span class="theme-dot" data-theme="sunset" style="background:#1a0f0a;" title="sunset"></span>
+      <span class="theme-dot" data-theme="mono" style="background:#111111;" title="mono"></span>
+    </div>
+    <div class="color-picker-row">
+      <label>accent</label>
+      <input type="color" id="accentColor" value="#ff9f43">
+      <label>wave</label>
+      <input type="color" id="waveColor" value="#ff9f43">
+      <label>bg</label>
+      <input type="color" id="bgColor" value="#0a0c0f">
+    </div>
+    <button id="resetThemeBtn" class="theme-btn">↺ reset</button>
+  </div>
+
+  <div class="editor-panel">
+    <label>⚡ formula ( t is sample counter )</label>
+    <input type="text" id="formulaInput" class="formula-input" value="t*((t&4096?t%65536<59392?7:t&7:16)+(1&t>>14))>>(3&-t>>(t&2048?2:10))|t>>(t&16384?t&4096?10:3:2)" spellcheck="false">
+  </div>
+
+  <div class="examples">
+    <span style="color:var(--text-label);font-size:0.7rem;margin-right:0.2rem;">examples:</span>
+    <span class="example-chip" data-formula="t*((t&4096?t%65536<59392?7:t&7:16)+(1&t>>14))>>(3&-t>>(t&2048?2:10))|t>>(t&16384?t&4096?10:3:2)">🥁 neurofunk</span>
+    <span class="example-chip" data-formula="t*5&(t>>7)|t*3&(t>>10)">crunch</span>
+    <span class="example-chip" data-formula="t*(t>>9)|t>>5">industrial</span>
+    <span class="example-chip" data-formula="t>>6^t&63">melody</span>
+    <span class="example-chip" data-formula="(t*9&t>>4|t*5&t>>7)-1">🔥 arcade</span>
+    <span class="example-chip" data-formula="t*3^(t>>9)*5">glitch</span>
+    <span class="example-chip" data-formula="t>>7|t|t>>6">8bit chaos</span>
+    <span class="example-chip" data-formula="(t*10&t>>4|t*5&t>>7)-1">fast arp</span>
+    <span class="example-chip" data-formula="(t*9&t>>4|t*7&t>>5)-1">dark arp</span>
+  </div>
+
+  <div class="controls">
+    <button id="playBtn" class="primary">▶ play</button>
+    <button id="stopBtn">⏹️ stop</button>
+    <button id="exportWavBtn" class="export-btn">💾 export WAV</button>
+    <div class="slider-group">
+      <label>🔊 vol</label>
+      <input type="range" id="volumeSlider" min="0.0" max="0.5" step="0.01" value="0.15">
+      <span id="volumeDisplay" style="color:var(--text-info);min-width:45px;">0.15</span>
+    </div>
+    <div class="slider-group">
+      <label>🎚️ rate</label>
+      <input type="range" id="sampleRateSlider" min="4000" max="22050" step="100" value="8000">
+      <span id="rateDisplay" style="color:var(--text-info);min-width:50px;">8000 Hz</span>
+    </div>
+  </div>
+
+  <canvas id="visualizerCanvas" width="840" height="150" style="width:100%;height:auto;aspect-ratio:840/150;"></canvas>
+  <div class="info-row">
+    <span id="statusText">⚪ ready</span>
+    <span id="timeText">t = 0</span>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ──────────────────────────────────────
+    // THEME SYSTEM
+    // ──────────────────────────────────────
+    const themes = {
+      dark: {
+        '--bg-body': '#0a0c0f',
+        '--bg-container': '#1a1e24',
+        '--bg-input': '#0f1117',
+        '--bg-canvas': '#05070a',
+        '--bg-panel': '#20242d',
+        '--text-heading': '#e0e7ff',
+        '--text-label': '#b9c2d4',
+        '--text-input': '#f1f5f9',
+        '--text-info': '#9aa1b9',
+        '--badge-bg': '#3b3f5c',
+        '--badge-text': '#cbd5e1',
+        '--border-subtle': 'rgba(255,255,255,0.08)',
+        '--border-divider': '#2f3542',
+        '--border-input': '#3a4050',
+        '--border-canvas': '#2d3748',
+        '--border-panel': '#2d3340',
+        '--btn-bg': '#2f3a4f',
+        '--btn-border': '#4a5568',
+        '--btn-text': '#e2e8f0',
+        '--btn-hover-bg': '#3f4b66',
+        '--btn-hover-border': '#7f8cff',
+        '--btn-hover-text': '#ffffff',
+        '--btn-primary-bg': '#ff9f43',
+        '--btn-primary-border': '#ffb56b',
+        '--btn-primary-text': '#0a0c0f',
+        '--btn-primary-hover': '#ffb56b',
+        '--btn-export-bg': '#2d5a3b',
+        '--btn-export-border': '#4ade80',
+        '--btn-export-text': '#e2e8f0',
+        '--btn-export-hover': '#3b7a4f',
+        '--btn-theme-bg': '#2f3a4f',
+        '--btn-theme-border': '#4a5568',
+        '--chip-bg': '#262d3a',
+        '--chip-border': '#404a5c',
+        '--chip-text': '#cdd6f0',
+        '--chip-hover-bg': '#3b4660',
+        '--chip-hover-border': '#8896d0',
+        '--accent-primary': '#ff9f43',
+        '--accent-glow': 'rgba(255,159,67,0.3)',
+        '--wave-color': '#ff9f43',
+        '--wave-glow': '#ff6b1a',
+      },
+      cyberpunk: {
+        '--bg-body': '#0d0015',
+        '--bg-container': '#1a0033',
+        '--bg-input': '#110022',
+        '--bg-canvas': '#050010',
+        '--bg-panel': '#220044',
+        '--text-heading': '#e0b0ff',
+        '--text-label': '#c084fc',
+        '--text-input': '#f0e0ff',
+        '--text-info': '#a78bfa',
+        '--badge-bg': '#4a1d6e',
+        '--badge-text': '#d8b4fe',
+        '--border-subtle': 'rgba(168,85,247,0.2)',
+        '--border-divider': '#3b1f5e',
+        '--border-input': '#5b2d8e',
+        '--border-canvas': '#3b1f5e',
+        '--border-panel': '#4a1d6e',
+        '--btn-bg': '#3b1f5e',
+        '--btn-border': '#6b3fa0',
+        '--btn-text': '#e0b0ff',
+        '--btn-hover-bg': '#5b2d8e',
+        '--btn-hover-border': '#a855f7',
+        '--btn-hover-text': '#ffffff',
+        '--btn-primary-bg': '#a855f7',
+        '--btn-primary-border': '#c084fc',
+        '--btn-primary-text': '#0d0015',
+        '--btn-primary-hover': '#c084fc',
+        '--btn-export-bg': '#064e3b',
+        '--btn-export-border': '#34d399',
+        '--btn-export-text': '#e0b0ff',
+        '--btn-export-hover': '#065f46',
+        '--btn-theme-bg': '#3b1f5e',
+        '--btn-theme-border': '#6b3fa0',
+        '--chip-bg': '#2d1050',
+        '--chip-border': '#5b2d8e',
+        '--chip-text': '#d8b4fe',
+        '--chip-hover-bg': '#4a1d6e',
+        '--chip-hover-border': '#a855f7',
+        '--accent-primary': '#a855f7',
+        '--accent-glow': 'rgba(168,85,247,0.35)',
+        '--wave-color': '#c084fc',
+        '--wave-glow': '#a855f7',
+      },
+      ocean: {
+        '--bg-body': '#060e18',
+        '--bg-container': '#0a1628',
+        '--bg-input': '#060f1e',
+        '--bg-canvas': '#020810',
+        '--bg-panel': '#0e1f36',
+        '--text-heading': '#bae6fd',
+        '--text-label': '#7dd3fc',
+        '--text-input': '#e0f2fe',
+        '--text-info': '#67b8e6',
+        '--badge-bg': '#0c3d5e',
+        '--badge-text': '#a5d8ff',
+        '--border-subtle': 'rgba(56,189,248,0.15)',
+        '--border-divider': '#0f2d44',
+        '--border-input': '#1a4a6e',
+        '--border-canvas': '#0f2d44',
+        '--border-panel': '#143652',
+        '--btn-bg': '#0f2d44',
+        '--btn-border': '#1a4a6e',
+        '--btn-text': '#bae6fd',
+        '--btn-hover-bg': '#1a4a6e',
+        '--btn-hover-border': '#38bdf8',
+        '--btn-hover-text': '#ffffff',
+        '--btn-primary-bg': '#38bdf8',
+        '--btn-primary-border': '#7dd3fc',
+        '--btn-primary-text': '#060e18',
+        '--btn-primary-hover': '#7dd3fc',
+        '--btn-export-bg': '#064e3b',
+        '--btn-export-border': '#34d399',
+        '--btn-export-text': '#bae6fd',
+        '--btn-export-hover': '#065f46',
+        '--btn-theme-bg': '#0f2d44',
+        '--btn-theme-border': '#1a4a6e',
+        '--chip-bg': '#0c2538',
+        '--chip-border': '#1a4a6e',
+        '--chip-text': '#a5d8ff',
+        '--chip-hover-bg': '#143652',
+        '--chip-hover-border': '#38bdf8',
+        '--accent-primary': '#38bdf8',
+        '--accent-glow': 'rgba(56,189,248,0.35)',
+        '--wave-color': '#38bdf8',
+        '--wave-glow': '#0ea5e9',
+      },
+      forest: {
+        '--bg-body': '#080d06',
+        '--bg-container': '#0d1a0d',
+        '--bg-input': '#081008',
+        '--bg-canvas': '#030803',
+        '--bg-panel': '#142614',
+        '--text-heading': '#bbf7d0',
+        '--text-label': '#86efac',
+        '--text-input': '#dcfce7',
+        '--text-info': '#6bbf7e',
+        '--badge-bg': '#1a4d1a',
+        '--badge-text': '#a0e8af',
+        '--border-subtle': 'rgba(74,222,128,0.15)',
+        '--border-divider': '#1a331a',
+        '--border-input': '#2a552a',
+        '--border-canvas': '#1a331a',
+        '--border-panel': '#1e3d1e',
+        '--btn-bg': '#1a331a',
+        '--btn-border': '#2a552a',
+        '--btn-text': '#bbf7d0',
+        '--btn-hover-bg': '#2a552a',
+        '--btn-hover-border': '#4ade80',
+        '--btn-hover-text': '#ffffff',
+        '--btn-primary-bg': '#4ade80',
+        '--btn-primary-border': '#86efac',
+        '--btn-primary-text': '#080d06',
+        '--btn-primary-hover': '#86efac',
+        '--btn-export-bg': '#064e3b',
+        '--btn-export-border': '#34d399',
+        '--btn-export-text': '#bbf7d0',
+        '--btn-export-hover': '#065f46',
+        '--btn-theme-bg': '#1a331a',
+        '--btn-theme-border': '#2a552a',
+        '--chip-bg': '#102210',
+        '--chip-border': '#2a552a',
+        '--chip-text': '#a0e8af',
+        '--chip-hover-bg': '#1e3d1e',
+        '--chip-hover-border': '#4ade80',
+        '--accent-primary': '#4ade80',
+        '--accent-glow': 'rgba(74,222,128,0.35)',
+        '--wave-color': '#4ade80',
+        '--wave-glow': '#22c55e',
+      },
+      sunset: {
+        '--bg-body': '#140a06',
+        '--bg-container': '#1a0f0a',
+        '--bg-input': '#100a06',
+        '--bg-canvas': '#080402',
+        '--bg-panel': '#261610',
+        '--text-heading': '#fed7aa',
+        '--text-label': '#fdba74',
+        '--text-input': '#fff0e0',
+        '--text-info': '#e8a87c',
+        '--badge-bg': '#5e2d1a',
+        '--badge-text': '#f0c8a0',
+        '--border-subtle': 'rgba(251,146,60,0.2)',
+        '--border-divider': '#3d2014',
+        '--border-input': '#6b3a24',
+        '--border-canvas': '#3d2014',
+        '--border-panel': '#4a2a1a',
+        '--btn-bg': '#3d2014',
+        '--btn-border': '#6b3a24',
+        '--btn-text': '#fed7aa',
+        '--btn-hover-bg': '#6b3a24',
+        '--btn-hover-border': '#fb923c',
+        '--btn-hover-text': '#ffffff',
+        '--btn-primary-bg': '#fb923c',
+        '--btn-primary-border': '#fdba74',
+        '--btn-primary-text': '#140a06',
+        '--btn-primary-hover': '#fdba74',
+        '--btn-export-bg': '#064e3b',
+        '--btn-export-border': '#34d399',
+        '--btn-export-text': '#fed7aa',
+        '--btn-export-hover': '#065f46',
+        '--btn-theme-bg': '#3d2014',
+        '--btn-theme-border': '#6b3a24',
+        '--chip-bg': '#301a10',
+        '--chip-border': '#6b3a24',
+        '--chip-text': '#f0c8a0',
+        '--chip-hover-bg': '#4a2a1a',
+        '--chip-hover-border': '#fb923c',
+        '--accent-primary': '#fb923c',
+        '--accent-glow': 'rgba(251,146,60,0.35)',
+        '--wave-color': '#fb923c',
+        '--wave-glow': '#f97316',
+      },
+      mono: {
+        '--bg-body': '#080808',
+        '--bg-container': '#111111',
+        '--bg-input': '#0a0a0a',
+        '--bg-canvas': '#030303',
+        '--bg-panel': '#1a1a1a',
+        '--text-heading': '#e0e0e0',
+        '--text-label': '#a0a0a0',
+        '--text-input': '#f0f0f0',
+        '--text-info': '#888888',
+        '--badge-bg': '#333333',
+        '--badge-text': '#cccccc',
+        '--border-subtle': 'rgba(255,255,255,0.06)',
+        '--border-divider': '#2a2a2a',
+        '--border-input': '#3a3a3a',
+        '--border-canvas': '#2a2a2a',
+        '--border-panel': '#282828',
+        '--btn-bg': '#2a2a2a',
+        '--btn-border': '#444444',
+        '--btn-text': '#e0e0e0',
+        '--btn-hover-bg': '#3a3a3a',
+        '--btn-hover-border': '#888888',
+        '--btn-hover-text': '#ffffff',
+        '--btn-primary-bg': '#888888',
+        '--btn-primary-border': '#aaaaaa',
+        '--btn-primary-text': '#080808',
+        '--btn-primary-hover': '#aaaaaa',
+        '--btn-export-bg': '#2a2a2a',
+        '--btn-export-border': '#555555',
+        '--btn-export-text': '#e0e0e0',
+        '--btn-export-hover': '#3a3a3a',
+        '--btn-theme-bg': '#2a2a2a',
+        '--btn-theme-border': '#444444',
+        '--chip-bg': '#1a1a1a',
+        '--chip-border': '#3a3a3a',
+        '--chip-text': '#cccccc',
+        '--chip-hover-bg': '#2a2a2a',
+        '--chip-hover-border': '#888888',
+        '--accent-primary': '#888888',
+        '--accent-glow': 'rgba(136,136,136,0.3)',
+        '--wave-color': '#cccccc',
+        '--wave-glow': '#888888',
+      }
+    };
+
+    let currentTheme = 'dark';
+    let customAccent = '#ff9f43';
+    let customWave = '#ff9f43';
+    let customBg = '#0a0c0f';
+
+    const root = document.documentElement;
+    const accentPicker = document.getElementById('accentColor');
+    const wavePicker = document.getElementById('waveColor');
+    const bgPicker = document.getElementById('bgColor');
+
+    function applyTheme(themeName) {
+      currentTheme = themeName;
+      const t = themes[themeName];
+      for (const [prop, val] of Object.entries(t)) {
+        root.style.setProperty(prop, val);
+      }
+      // Override with custom picks if they differ from defaults
+      if (customAccent !== t['--accent-primary']) {
+        root.style.setProperty('--accent-primary', customAccent);
+        root.style.setProperty('--accent-glow', customAccent.replace(')', ',0.35)').replace('rgb', 'rgba'));
+      }
+      if (customWave !== t['--wave-color']) {
+        root.style.setProperty('--wave-color', customWave);
+        root.style.setProperty('--wave-glow', customWave);
+      }
+      if (customBg !== t['--bg-body']) {
+        root.style.setProperty('--bg-body', customBg);
+      }
+
+      accentPicker.value = customAccent;
+      wavePicker.value = customWave;
+      bgPicker.value = customBg;
+
+      document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+      const activeDot = document.querySelector(`.theme-dot[data-theme="${themeName}"]`);
+      if (activeDot) activeDot.classList.add('active');
+    }
+
+    function updateCustomColors() {
+      root.style.setProperty('--accent-primary', customAccent);
+      root.style.setProperty('--accent-glow', customAccent.replace(')', ',0.35)').replace('rgb', 'rgba').replace('#', ''));
+      root.style.setProperty('--wave-color', customWave);
+      root.style.setProperty('--wave-glow', customWave);
+      root.style.setProperty('--bg-body', customBg);
+      // Also update primary button to match accent
+      root.style.setProperty('--btn-primary-bg', customAccent);
+      root.style.setProperty('--btn-primary-border', customAccent);
+    }
+
+    accentPicker.addEventListener('input', () => {
+      customAccent = accentPicker.value;
+      updateCustomColors();
+    });
+
+    wavePicker.addEventListener('input', () => {
+      customWave = wavePicker.value;
+      updateCustomColors();
+    });
+
+    bgPicker.addEventListener('input', () => {
+      customBg = bgPicker.value;
+      updateCustomColors();
+    });
+
+    document.querySelectorAll('.theme-dot').forEach(dot => {
+      dot.addEventListener('click', () => {
+        const theme = dot.getAttribute('data-theme');
+        customAccent = themes[theme]['--accent-primary'];
+        customWave = themes[theme]['--wave-color'];
+        customBg = themes[theme]['--bg-body'];
+        applyTheme(theme);
+      });
+    });
+
+    document.getElementById('resetThemeBtn').addEventListener('click', () => {
+      customAccent = themes[currentTheme]['--accent-primary'];
+      customWave = themes[currentTheme]['--wave-color'];
+      customBg = themes[currentTheme]['--bg-body'];
+      applyTheme(currentTheme);
+    });
+
+    // ──────────────────────────────────────
+    // AUDIO ENGINE (same as before)
+    // ──────────────────────────────────────
+    let audioCtx = null;
+    let processorNode = null;
+    let sourceNode = null;
+    let isPlaying = false;
+    let tGlobal = 0;
+
+    const canvas = document.getElementById('visualizerCanvas');
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    const formulaInput = document.getElementById('formulaInput');
+    const playBtn = document.getElementById('playBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const exportWavBtn = document.getElementById('exportWavBtn');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const volumeDisplay = document.getElementById('volumeDisplay');
+    const sampleRateSlider = document.getElementById('sampleRateSlider');
+    const rateDisplay = document.getElementById('rateDisplay');
+    const statusText = document.getElementById('statusText');
+    const timeText = document.getElementById('timeText');
+    const exampleChips = document.querySelectorAll('.example-chip');
+
+    let currentVolume = parseFloat(volumeSlider.value);
+    let currentSampleRate = parseInt(sampleRateSlider.value, 10);
+
+    function compileFormula(formulaStr) {
+      try {
+        const normalized = formulaStr.trim();
+        if (normalized.length === 0) return new Function('t', 'return 128;');
+        const body = `return ((${normalized}) >>> 0) & 0xFF;`;
+        const fn = new Function('t', body);
+        fn(0); fn(100);
+        return fn;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    let bytebeatFunc = compileFormula(formulaInput.value);
+    const VISUAL_BUFFER_SIZE = 1024;
+    const visualSamples = new Uint8Array(VISUAL_BUFFER_SIZE);
+    let visualIndex = 0;
+
+    function pushVisualSample(value) {
+      visualSamples[visualIndex % VISUAL_BUFFER_SIZE] = value;
+      visualIndex++;
+    }
+
+    function drawVisualization() {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = getComputedStyle(root).getPropertyValue('--bg-canvas').trim();
+      ctx.fillRect(0, 0, width, height);
+      ctx.strokeStyle = '#2f3a4a';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(0, height/2);
+      ctx.lineTo(width, height/2);
+      ctx.stroke();
+
+      const available = Math.min(visualIndex, VISUAL_BUFFER_SIZE);
+      if (available < 2) return;
+
+      const drawSamples = new Uint8Array(available);
+      if (visualIndex >= VISUAL_BUFFER_SIZE) {
+        const offset = visualIndex % VISUAL_BUFFER_SIZE;
+        const firstPart = visualSamples.slice(offset);
+        const secondPart = visualSamples.slice(0, offset);
+        const combined = new Uint8Array(VISUAL_BUFFER_SIZE);
+        combined.set(firstPart);
+        combined.set(secondPart, firstPart.length);
+        drawSamples.set(combined);
+      } else {
+        drawSamples.set(visualSamples.slice(0, visualIndex));
+      }
+
+      const waveColor = getComputedStyle(root).getPropertyValue('--wave-color').trim();
+      const waveGlow = getComputedStyle(root).getPropertyValue('--wave-glow').trim();
+      ctx.strokeStyle = waveColor;
+      ctx.lineWidth = 1.8;
+      ctx.shadowColor = waveGlow;
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      const step = width / (drawSamples.length - 1 || 1);
+      for (let i = 0; i < drawSamples.length; i++) {
+        const x = i * step;
+        const y = height - (drawSamples[i] / 255) * height;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
+    }
+
+    let tAccumulator = 0;
+    function computeTStep() {
+      if (!audioCtx) return 1.0;
+      return currentSampleRate / audioCtx.sampleRate;
+    }
+
+    function setupProcessorCallback() {
+      if (!processorNode) return;
+      processorNode.onaudioprocess = (event) => {
+        const outputBuffer = event.outputBuffer;
+        const channelData = outputBuffer.getChannelData(0);
+        const sampleCount = channelData.length;
+        if (!isPlaying || !bytebeatFunc) {
+          for (let i = 0; i < sampleCount; i++) { channelData[i] = 0; pushVisualSample(128); }
+          scheduleVisualUpdate();
+          return;
+        }
+        const step = computeTStep();
+        for (let i = 0; i < sampleCount; i++) {
+          const integerT = Math.floor(tAccumulator);
+          let sample = 0, byteVal = 128;
+          try { byteVal = bytebeatFunc(integerT) & 0xFF; sample = (byteVal - 128) / 128.0; }
+          catch (e) { sample = 0; byteVal = 128; }
+          sample *= currentVolume;
+          if (sample > 1.0) sample = 1.0;
+          if (sample < -1.0) sample = -1.0;
+          channelData[i] = sample;
+          pushVisualSample(byteVal);
+          tAccumulator += step;
+        }
+        tGlobal = Math.floor(tAccumulator);
+        scheduleVisualUpdate();
+      };
+    }
+
+    let visualUpdateScheduled = false;
+    function scheduleVisualUpdate() {
+      if (!visualUpdateScheduled) {
+        visualUpdateScheduled = true;
+        requestAnimationFrame(() => {
+          drawVisualization();
+          timeText.textContent = `t = ${tGlobal}`;
+          visualUpdateScheduled = false;
+        });
+      }
+    }
+
+    function initializeAudio() {
+      if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        catch(e) { return false; }
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      if (processorNode) { try { processorNode.disconnect(); } catch(e){} }
+      if (sourceNode) { try { sourceNode.stop(); sourceNode.disconnect(); } catch(e){} }
+      const buffer = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+      buffer.getChannelData(0)[0] = 0;
+      sourceNode = audioCtx.createBufferSource();
+      sourceNode.buffer = buffer;
+      sourceNode.loop = true;
+      processorNode = audioCtx.createScriptProcessor(256, 0, 1);
+      sourceNode.connect(processorNode);
+      processorNode.connect(audioCtx.destination);
+      sourceNode.start(0);
+      setupProcessorCallback();
+      return true;
+    }
+
+    function startPlayback() {
+      if (!audioCtx || !processorNode) { if (!initializeAudio()) { statusText.textContent = '❌ audio init failed'; return; } }
+      const fn = compileFormula(formulaInput.value);
+      if (!fn) { statusText.textContent = '❌ invalid formula'; return; }
+      bytebeatFunc = fn;
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      isPlaying = true;
+      statusText.textContent = '🟢 playing';
+      playBtn.style.background = getComputedStyle(root).getPropertyValue('--btn-primary-bg').trim();
+    }
+
+    function stopPlayback() {
+      isPlaying = false;
+      statusText.textContent = '⏸️ stopped';
+      playBtn.style.background = getComputedStyle(root).getPropertyValue('--btn-bg').trim();
+    }
+
+    function exportWav() {
+      const sampleRate = audioCtx ? audioCtx.sampleRate : 44100;
+      const durationSec = 30;
+      const numSamples = sampleRate * durationSec;
+      const step = computeTStep();
+      const savedT = tAccumulator;
+      const wasPlaying = isPlaying;
+      if (wasPlaying) stopPlayback();
+      statusText.textContent = '⏳ rendering WAV...';
+      setTimeout(() => {
+        try {
+          const buffer = new Float32Array(numSamples);
+          let tempT = 0;
+          const fn = compileFormula(formulaInput.value);
+          if (!fn) throw new Error('invalid formula');
+          for (let i = 0; i < numSamples; i++) {
+            const intT = Math.floor(tempT);
+            let byteVal = 128;
+            try { byteVal = fn(intT) & 0xFF; } catch(e) { byteVal = 128; }
+            buffer[i] = Math.max(-1, Math.min(1, ((byteVal - 128) / 128.0) * currentVolume));
+            tempT += step;
+          }
+          tAccumulator = savedT;
+          if (wasPlaying) startPlayback();
+          const wavBuffer = encodeWav(buffer, sampleRate);
+          const blob = new Blob([wavBuffer], { type: 'audio/wav' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'bytebeat_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.wav';
+          a.click();
+          URL.revokeObjectURL(url);
+          statusText.textContent = '✅ WAV exported! (30s)';
+        } catch (err) {
+          statusText.textContent = '❌ export failed';
+          tAccumulator = savedT;
+          if (wasPlaying) startPlayback();
+        }
+      }, 100);
+    }
+
+    function encodeWav(samples, sampleRate) {
+      const numChannels = 1, bitsPerSample = 16;
+      const byteRate = sampleRate * numChannels * bitsPerSample / 8;
+      const blockAlign = numChannels * bitsPerSample / 8;
+      const dataSize = samples.length * blockAlign;
+      const buffer = new ArrayBuffer(44 + dataSize);
+      const view = new DataView(buffer);
+      function writeString(offset, str) { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); }
+      writeString(0, 'RIFF');
+      view.setUint32(4, 36 + dataSize, true);
+      writeString(8, 'WAVE');
+      writeString(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, byteRate, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, bitsPerSample, true);
+      writeString(36, 'data');
+      view.setUint32(40, dataSize, true);
+      let offset = 44;
+      for (const s of samples) {
+        const clamped = Math.max(-1, Math.min(1, s));
+        const int16 = clamped < 0 ? clamped * 32768 : clamped * 32767;
+        view.setInt16(offset, int16, true);
+        offset += 2;
+      }
+      return buffer;
+    }
+
+    playBtn.addEventListener('click', startPlayback);
+    stopBtn.addEventListener('click', stopPlayback);
+    exportWavBtn.addEventListener('click', exportWav);
+    volumeSlider.addEventListener('input', () => { currentVolume = parseFloat(volumeSlider.value); volumeDisplay.textContent = currentVolume.toFixed(2); });
+    sampleRateSlider.addEventListener('input', () => { currentSampleRate = parseInt(sampleRateSlider.value, 10); rateDisplay.textContent = currentSampleRate + ' Hz'; });
+    exampleChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const formula = chip.getAttribute('data-formula');
+        if (formula) {
+          formulaInput.value = formula;
+          const fn = compileFormula(formula);
+          if (fn) { bytebeatFunc = fn; statusText.textContent = '📝 formula loaded'; }
+          else { statusText.textContent = '⚠️ formula error'; }
+        }
+      });
+    });
+    formulaInput.addEventListener('input', () => {
+      const fn = compileFormula(formulaInput.value);
+      if (fn) { bytebeatFunc = fn; statusText.textContent = '📝 formula updated'; }
+      else { statusText.textContent = '❌ syntax error'; }
+    });
+
+    // Init
+    applyTheme('dark');
+    rateDisplay.textContent = currentSampleRate + ' Hz';
+    volumeDisplay.textContent = currentVolume.toFixed(2);
+    visualSamples.fill(128);
+    drawVisualization();
+    statusText.textContent = '⚪ ready · click play';
+
+    document.body.addEventListener('click', function initAudioOnce() {
+      if (!audioCtx) initializeAudio();
+    }, { once: true });
+  })();
+</script>
+</body>
+</html>
